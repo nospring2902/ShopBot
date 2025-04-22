@@ -1,0 +1,142 @@
+CREATE DATABASE ShopDB;
+
+-- Tạo kiểu ENUM cho các trạng thái
+CREATE TYPE discount_type AS ENUM ('percentage', 'fixed_amount');
+CREATE TYPE promotion_status AS ENUM ('active', 'inactive', 'expired');
+CREATE TYPE payment_status AS ENUM ('paid', 'unpaid', 'pending');
+
+-- Tạo bảng Brand
+CREATE TABLE Brand (
+    Brand_ID SERIAL PRIMARY KEY,
+    Brand_Name VARCHAR(255) NOT NULL,
+    Description TEXT,
+    Logo_URL VARCHAR(500),
+    Origin_Country VARCHAR(100)
+);
+
+-- Tạo bảng Product_Category
+CREATE TABLE Product_Category (
+    Category_ID SERIAL PRIMARY KEY,
+    Parent_Category_ID INT,
+    Category_Name VARCHAR(255) NOT NULL,
+    Description TEXT,
+    FOREIGN KEY (Parent_Category_ID) REFERENCES Product_Category(Category_ID)
+);
+
+-- Tạo bảng Customer
+CREATE TABLE Customer (
+    Customer_ID SERIAL PRIMARY KEY,
+    Email VARCHAR(255) UNIQUE,
+    Phone VARCHAR(20),
+    Name VARCHAR(255),
+    Address TEXT
+);
+
+-- Tạo bảng Payment_Method
+CREATE TABLE Payment_Method (
+    Payment_Method_ID SERIAL PRIMARY KEY,
+    Method_Name VARCHAR(100),
+    Description TEXT
+);
+
+-- Tạo bảng Shipping_Method
+CREATE TABLE Shipping_Method (
+    Shipping_Method_ID SERIAL PRIMARY KEY,
+    Method_Name VARCHAR(100),
+    Description TEXT,
+    Cost_per_product DECIMAL(10,2),
+    average_delivery_time_per_km DECIMAL(5,2)
+);
+
+-- Tạo bảng Shipping_Address
+CREATE TABLE Shipping_Address (
+    Address_ID SERIAL PRIMARY KEY,
+    Customer_ID INT,
+    Receiver_Name VARCHAR(255),
+    Receiver_Phone VARCHAR(20),
+    Country VARCHAR(100),
+    City VARCHAR(100),
+    Province_State VARCHAR(100),
+    Postal_Code VARCHAR(20),
+    Is_Default BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID)
+);
+
+-- Tạo bảng Promotion
+CREATE TABLE Promotion (
+    Promotion_ID SERIAL PRIMARY KEY,
+    Description TEXT,
+    Discount_Type discount_type,
+    Discount_Value DECIMAL(10,2),
+    Start_Date DATE,
+    End_Date DATE,
+    Coupon_Code VARCHAR(50),
+    Minimum_Order DECIMAL(10,2),
+    Status promotion_status
+);
+
+-- Tạo bảng Product
+CREATE TABLE Product (
+    Product_ID SERIAL PRIMARY KEY,
+    Product_Name VARCHAR(255) NOT NULL,
+    Category_ID INT,
+    Brand_ID INT,
+    Description TEXT,
+    Price DECIMAL(10,2),
+    Stock_Quantity INT,
+    Image_URLs TEXT,
+    Specifications TEXT,
+    Created_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Updated_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (Category_ID) REFERENCES Product_Category(Category_ID),
+    FOREIGN KEY (Brand_ID) REFERENCES Brand(Brand_ID)
+);
+
+-- Tạo bảng Order
+CREATE TABLE "Order" (
+    Order_ID SERIAL PRIMARY KEY,
+    Customer_ID INT,
+    Payment_Method_ID INT,
+    Shipping_Method_ID INT,
+    Shipping_Address_ID INT,
+    Promotion_ID INT,
+    Order_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Total_Amount DECIMAL(12,2),
+    Shipping_Fee DECIMAL(10,2),
+    Discount DECIMAL(10,2),
+    Payment_Status payment_status,
+    Order_Status VARCHAR(100),
+    Estimated_Delivery_Date DATE,
+    Note TEXT,
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID),
+    FOREIGN KEY (Payment_Method_ID) REFERENCES Payment_Method(Payment_Method_ID),
+    FOREIGN KEY (Shipping_Method_ID) REFERENCES Shipping_Method(Shipping_Method_ID),
+    FOREIGN KEY (Shipping_Address_ID) REFERENCES Shipping_Address(Address_ID),
+    FOREIGN KEY (Promotion_ID) REFERENCES Promotion(Promotion_ID)
+);
+
+-- Tạo bảng Order_Item
+CREATE TABLE Order_Item (
+    Order_ID INT,
+    Product_ID INT,
+    Quantity INT,
+    PRIMARY KEY (Order_ID, Product_ID),
+    FOREIGN KEY (Order_ID) REFERENCES "Order"(Order_ID),
+    FOREIGN KEY (Product_ID) REFERENCES Product(Product_ID)
+);
+
+-- Tạo bảng Review
+CREATE TABLE Review (
+    Review_ID SERIAL PRIMARY KEY,
+    Product_ID INT,
+    Customer_ID INT,
+    Rating INT CHECK (Rating BETWEEN 1 AND 5),
+    Comment TEXT,
+    Review_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Images TEXT,
+    FOREIGN KEY (Product_ID) REFERENCES Product(Product_ID),
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID)
+);
+
+-- Hiển thị danh sách bảng
+\dt;
